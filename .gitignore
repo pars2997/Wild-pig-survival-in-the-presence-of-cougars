@@ -1,0 +1,15 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.pdf
+*.doc
+*.docx
+*.png
+*.eps
+*.xlsx
+CougarLocations/
+Writing/
+Figures/
+cougar_cluster_investigations.csv
+README_sensitive.md

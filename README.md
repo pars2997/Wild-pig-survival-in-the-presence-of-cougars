@@ -46,10 +46,6 @@ This raster layer is a 30x30m resolution raster of proportion of riparian cover 
 
 This raster layer is a 30x30m resolution raster of proportion of shrub cover in a 5x5 cell moving window. This layer was derived from the 2021 National Landcover Database (classes 51, 52).
 
-
-#####
-
-
 ##### is_land.tiff
 
 This raster layer is a 30x30m resolution raster of whether a cell is terrestial land or open water. This layer was derived from the 2021 National Landcover Database (all classes except open water) and was used to mask ocean areas from modeled habitats.
@@ -131,14 +127,14 @@ We are unable to share these raw data because of their sensitive nature.
 3. Estimate RSF of cougar kills for cougar predation risk
 4. Estimate SSF of pig GPS collars to understand if they avoid areas of high cougar risk.
 
-##### Pig survival.R 
+##### 01_Pig survival_to share.R 
 
 This file uses pig capture history data to estimate survival rates using Kaplan-Meier esitmation method.
 Then uses cox proportional hazard models to estimate if survival varies by age class.
 Then creates plots of survival curves, estimated rates +/- 95% CIs
 Then runs chi squared test to see if causes of mortality vary by age class.
 
-##### HomeRanges_NewCollars.R
+##### 02_HomeRanges_NewCollars.R
 
 This file uses cougar GPS collar data and creates home ranges.
 After inital processing and data cleaning, uses AMT to estiamte 95% autocorrelated kernel density estimates.
@@ -146,7 +142,7 @@ And 100% minimum convex polygons for three collared cougars: SF9, SF1, and SM6.
 Currently only writes shapefiles for MCPs since that is what is used in cougar RSF.
 Note: We cannot provide the raw data to run this code, but provide the code as an illustration of what we did.
 
-##### RSF_multiple-animals.R
+##### 03_RSF_multiple-animals.R
 
 This file estimates an resource selection function of cougar kill sites.
 It then uses this RSF to create a layers of predicted probability of cougar kill occurrence.
@@ -155,7 +151,7 @@ Outputs include the parameter estimates for kill site RSF and the cougar risk la
 Note: We cannot provide the raw data to run this code, but provide the code as an illustration of what we did.
 We provide the produced cougar kill occurrene layer which is used in the pig step selection function.
 
-##### SSF_PigCollars.R
+##### 04_SSF_PigCollars.R
 
 This file estimates integrated step selection functions for wild pigs.
 It first processes and cleans pig GPS collar data and adds sunrise/sunset times to identify day and night locations.

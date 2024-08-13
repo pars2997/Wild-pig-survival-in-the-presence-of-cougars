@@ -169,38 +169,6 @@ rm(FA01,FA02,FA03,FA04,FA05,FA06_1,FA06_2,FA07,FA08,FA09,FA10,FA11,
    MS09,FS04,FS10,FS11,pigcollars.org,pigcollars,deployments)
 gc()
 
-# Jolon Road Polygon
-# Check how many collared pigs crossed the road
-
-# Create polygon of area across the road that could be used by pigs
-pt1 <- c(35.969149, -121.176401)
-pt2 <- c(36.023706, -121.177895)
-pt3 <- c(36.017310, -121.048566)
-pt4 <- c(35.919891, -121.033356)
-pt5 <- c(35.936594, -121.064463)
-pt6 <- c(35.939770, -121.128203)
-pt7 <- pt1
-polygon.df <- as.data.frame(rbind(pt1,pt2,pt3,pt4,pt5,pt6,pt7))
-
-pol = st_polygon(
-  list(
-    cbind(
-      polygon.df$V2[c(1,2,3,4,5,6,7)], 
-      polygon.df$V1[c(1,2,3,4,5,6,7)])
-  )
-)
-
-# Add CRS to the polygon
-polc = st_sfc(pol, crs=4326)
-
-# Filter GPS collar locations to only those within the polygon
-temp <- st_as_sf(piglocs.filtered,coords = c("Longitude","Latitude"),crs = 4326)
-temp2 <- st_filter(temp,polc)
-# Check how many pigs used the area across the road and how many points they had there.
-length(table(temp2$AID))
-length(table(piglocs.filtered$AID))
-
-
 #### Read in GIS Covariates ####
 # is.land filters masks the ocean to prevent weird preditction values
 is.land <- rast("../ProcessedData/is_land.tiff")
@@ -246,202 +214,221 @@ LionRisk_25 <- focal(x = LionRisk, w = window, fun = mean)
 
 #### Plots of pig locations/KDE's plotted over relative predation risk ####
 
-# # create sf object from pig location data
-# piglocs <- st_as_sf(piglocs.filtered,coords = c("Easting","Northing"),crs = 32610)
-# 
-# # create objects for two individual pigs, FA01 and FA08
-# temp <- piglocs[piglocs$AID == "FA08",]
-# # temp.day <- piglocs[piglocs$AID == "FA08" & piglocs$night == 0,]
-# # temp.night <- piglocs[piglocs$AID == "FA08" & piglocs$night == 1,]
-# 
-# temp2 <- piglocs[piglocs$AID == "FA01",]
-# # temp.day2 <- piglocs[piglocs$AID == "FA01" & piglocs$night == 0,]
-# # temp.night2 <- piglocs[piglocs$AID == "FA01" & piglocs$night == 1,]
-# 
-# # set min and max extent needed for each pig
-# xmin <- as.numeric(660250)
-# ymin <- as.numeric(3977250)
-# xmax <- as.numeric(667250)
-# ymax <- as.numeric(3984250)
-# 
-# xmin2 <- as.numeric(652000)
-# ymin2 <- as.numeric(3978500)
-# xmax2 <- as.numeric(658000)
-# ymax2 <- as.numeric(3984500)
-# 
-# # Create single column identifying if a location occurred
-# # during the day or at night
-# temp <- temp %>%
-#   mutate(Period = case_when(
-#     night == 0 ~ "Day",
-#     night == 1 ~ "Night"
-#   ))
-# 
-# temp2 <- temp2 %>%
-#   mutate(Period = case_when(
-#     night == 0 ~ "Day",
-#     night == 1 ~ "Night"
-#   ))
-# 
-# # add columns for x and y coordinates
-# temp$xcord <- st_coordinates(temp)[,1]
-# temp$ycord <- st_coordinates(temp)[,2]
-# 
-# # drop the geometry
-# FA08 <- st_drop_geometry(temp)
-# # split the dataframe into day and night compoents
-# # these are used to estimate KDE's for each period
-# FA08day <- FA08[FA08$night == 0,]
-# FA08night <- FA08[FA08$night == 1,]
-# # create spatial points data frame for kernelUD function
-# FA08_day_spdf <- SpatialPoints(coords = FA08day[,17:18])
-# FA08_night_spdf <- SpatialPoints(coords = FA08night[,17:18])
-# # calculate UDs for individual pig
-# FA08kud_day <- kernelUD(FA08_day_spdf,grid = 500)
-# FA08kud_night <- kernelUD(FA08_night_spdf,grid = 500)
-# # extract polygon for 50% UD (i.e., core area)
-# FA08_50_day <- getverticeshr(FA08kud_day,50)
-# FA08_50_night <- getverticeshr(FA08kud_night,50)
-# 
-# # Repeat previous steps for second pig
-# temp2$xcord <- st_coordinates(temp2)[,1]
-# temp2$ycord <- st_coordinates(temp2)[,2]
-# 
-# FA01 <- st_drop_geometry(temp2)
-# FA01day <- FA01[FA01$night == 0,]
-# FA01night <- FA01[FA01$night == 1,]
-# FA01_day_spdf <- SpatialPoints(coords = FA01day[,17:18])
-# FA01_night_spdf <- SpatialPoints(coords = FA01night[,17:18])
-# FA01kud_day <- kernelUD(FA01_day_spdf,grid = 500)
-# FA01kud_night <- kernelUD(FA01_night_spdf,grid = 500)
-# FA01_50_day <- getverticeshr(FA01kud_day,50)
-# FA01_50_night <- getverticeshr(FA01kud_night,50)
-# 
-# # convert UDs from lat long crs to UTM crs to match lion risk layer
-# FA01_50_day.2 <- st_as_sf(FA01_50_day,crs = 32610)
-# st_crs(FA01_50_day.2) <- 32610
-# FA01_50_night.2 <- st_as_sf(FA01_50_night,crs = 32610)
-# st_crs(FA01_50_night.2) <- 32610
-# 
-# # set colors for plotting
-# cols.fill = c("Day" = "cyan3", "Night" = "grey20")
-# 
-# # plot FA01's uds over the lion risk layer
-# FA01_UDplot <- ggplot()+
-#   geom_spatraster(data = LionRisk_25)+
-#   xlim(xmin2,xmax2)+
-#   ylim(ymin2,ymax2)+
-#   scale_fill_viridis_c(option = "magma",direction = -1)+
-#   labs(fill = "Relative \npredation risk")+
-#   geom_sf(data = FA01_50_day.2,color = "cyan3",fill = NA,lwd = 0.8)+
-#   geom_sf(data = FA01_50_night.2, col = "grey20",fill = NA,lwd = 0.8)+
-#   # scale_color_manual(name = "Time of day",values = cols.fill)+
-#   theme_bw()+
-#   theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))+
-#   theme(legend.position = "none")+
-#   ggplot2::annotate("text", x = 652400, y = 3984100, label = "A", size = 6)+
-#   xlab("Latitude")+
-#   ylab("Longitude")
-# 
-# 
-# FA01_UDplot
-# 
-# 
-# # convert FA08's uds from lat long crs to utm crs
-# FA08_50_day.2 <- st_as_sf(FA08_50_day,crs = 32610)
-# st_crs(FA08_50_day.2) <- 32610
-# FA08_50_night.2 <- st_as_sf(FA08_50_night,crs = 32610)
-# st_crs(FA08_50_night.2) <- 32610
-# 
-# # plot FA08's UDs over the lion risk layer
-# FA08_UDplot <- ggplot()+
-#   geom_spatraster(data = LionRisk_25)+
-#   xlim(xmin,xmax)+
-#   ylim(ymin,ymax)+
-#   scale_fill_viridis_c(option = "magma",direction = -1)+
-#   labs(fill = "Relative \npredation risk")+
-#   geom_sf(data = FA08_50_day.2,aes(color = "Day"),fill = NA,lwd = 0.8,show.legend = "line")+
-#   geom_sf(data = FA08_50_night.2, aes(color = "Night"),fill = NA,lwd = 0.8,show.legend = "line")+
-#   scale_color_manual(name = "Time of day",values = cols.fill)+
-#   theme_bw()+
-#   theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))+
-#   ggplot2::annotate("text", x = 660600, y = 3983850, label = "B", size = 6)+
-#   xlab("Latitude")+
-#   ylab("")
-# 
-# FA08_UDplot
-# 
-# # plot both UD layers together
-# bothUDs <- ggarrange(plotlist = list(FA01_UDplot,FA08_UDplot),ncol = 2,widths = c(1,1.45))
-# 
-# # add save plot to a png for publication
-# png(file = "../Figures/Pig_UDplots_25cell.png",height = 6, width = 10,
-#     res = 300, units = "in",type = "cairo")
-# bothUDs
-# dev.off()
-# 
-# 
-# Both_UDplot <- ggplot()+
-#   geom_spatraster(data = LionRisk_25)+
-#   scale_fill_viridis_c(option = "magma",direction = -1)+
-#   labs(fill = "Relative probability of \ncougar kill occurrence\n")+
-#   xlim(xmin2,xmax)+
-#   ylim(ymin,ymax2)+
-#   geom_sf(data = FA01_50_day.2,aes(color = "Day"),fill = NA,lwd = 0.8)+
-#   geom_sf(data = FA01_50_night.2, aes(color = "Night"),fill = NA,lwd = 0.8)+
-#   geom_sf(data = FA08_50_day.2,aes(color = "Day"),fill = NA,lwd = 0.8,show.legend = "line")+
-#   geom_sf(data = FA08_50_night.2, aes(color = "Night"),fill = NA,lwd = 0.8,show.legend = "line")+
-#   coord_sf(datum = st_crs(FA01_50_day.2))+
-#   scale_color_manual(name = "Time of day",values = cols.fill)+
-#   theme_bw()+
-#   theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))+
-#   # ggplot2::annotate("text", x = 652400, y = 3984100, label = "A", size = 6)+
-#   xlab("Easting")+
-#   ylab("Northing")
-# 
-# 
-# 
-# # the next two plot plot the individual points over the lion risk layer
-# # but I decided it was too messy and difficult to interpret
-# FA08_plot <- ggplot()+
-#   geom_spatraster(data = LionRisk)+
-#   xlim(xmin,xmax)+
-#   ylim(ymin,ymax)+
-#   scale_fill_viridis_c(option = "magma",direction = -1)+
-#   labs(fill = "Relative \npredation risk")+
-#   geom_sf(data = temp,aes(col = factor(Period)),
-#           alpha = 0.6,show.legend = FALSE,size = 1)+
-#   scale_color_manual(values = c("cyan3","grey20"))+
-#   theme_bw()+
-#   facet_wrap(~Period)+
-#   theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))
-# 
-# 
-# 
-# FA01_plot <- ggplot()+
-#   geom_spatraster(data = LionRisk)+
-#   xlim(xmin2,xmax2)+
-#   ylim(ymin2,ymax2)+
-#   scale_fill_viridis_c(option = "magma",direction = -1)+
-#   labs(fill = "Relative \npredation risk")+
-#   geom_sf(data = temp2,aes(col = factor(Period)),
-#           alpha = 0.4,show.legend = FALSE,size = 1)+
-#   scale_color_manual(values = c("cyan3","grey20"))+
-#   theme_bw()+
-#   facet_wrap(~Period)+
-#   theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))
-# 
-# 
-# 
-# png(file = "../Figures/FA01_UD_plot.png",height = 6, width = 10,
-#      res = 300, units = "in",type = "cairo")
-# FA01_UDplot
-# dev.off()
-# 
-# png(file = "../Figures/FA08_UD_plot.png",height = 6, width = 10,
-#     res = 300, units = "in",type = "cairo")
-# FA08_UDplot
-# dev.off()
+# create sf object from pig location data
+piglocs <- st_as_sf(piglocs.filtered,coords = c("Easting","Northing"),crs = 32610)
+
+# create objects for two individual pigs, FA01 and FA08
+temp <- piglocs[piglocs$AID == "FA08",]
+# temp.day <- piglocs[piglocs$AID == "FA08" & piglocs$night == 0,]
+# temp.night <- piglocs[piglocs$AID == "FA08" & piglocs$night == 1,]
+
+temp2 <- piglocs[piglocs$AID == "FA01",]
+# temp.day2 <- piglocs[piglocs$AID == "FA01" & piglocs$night == 0,]
+# temp.night2 <- piglocs[piglocs$AID == "FA01" & piglocs$night == 1,]
+
+# set min and max extent needed for each pig
+xmin <- as.numeric(660250)
+ymin <- as.numeric(3977250)
+xmax <- as.numeric(667250)
+ymax <- as.numeric(3984250)
+
+xmin2 <- as.numeric(652000)
+ymin2 <- as.numeric(3978500)
+xmax2 <- as.numeric(658000)
+ymax2 <- as.numeric(3984500)
+
+# Create single column identifying if a location occurred
+# during the day or at night
+temp <- temp %>%
+  mutate(Period = case_when(
+    night == 0 ~ "Day",
+    night == 1 ~ "Night"
+  ))
+
+temp2 <- temp2 %>%
+  mutate(Period = case_when(
+    night == 0 ~ "Day",
+    night == 1 ~ "Night"
+  ))
+
+# add columns for x and y coordinates
+temp$xcord <- st_coordinates(temp)[,1]
+temp$ycord <- st_coordinates(temp)[,2]
+
+# drop the geometry
+FA08 <- st_drop_geometry(temp)
+# split the dataframe into day and night compoents
+# these are used to estimate KDE's for each period
+FA08day <- FA08[FA08$night == 0,]
+FA08night <- FA08[FA08$night == 1,]
+# create spatial points data frame for kernelUD function
+FA08_day_spdf <- SpatialPoints(coords = FA08day[,17:18])
+FA08_night_spdf <- SpatialPoints(coords = FA08night[,17:18])
+# calculate UDs for individual pig
+FA08kud_day <- kernelUD(FA08_day_spdf,grid = 500)
+FA08kud_night <- kernelUD(FA08_night_spdf,grid = 500)
+# extract polygon for 50% UD (i.e., core area)
+FA08_50_day <- getverticeshr(FA08kud_day,50)
+FA08_50_night <- getverticeshr(FA08kud_night,50)
+
+# Repeat previous steps for second pig
+temp2$xcord <- st_coordinates(temp2)[,1]
+temp2$ycord <- st_coordinates(temp2)[,2]
+
+FA01 <- st_drop_geometry(temp2)
+FA01day <- FA01[FA01$night == 0,]
+FA01night <- FA01[FA01$night == 1,]
+FA01_day_spdf <- SpatialPoints(coords = FA01day[,17:18])
+FA01_night_spdf <- SpatialPoints(coords = FA01night[,17:18])
+FA01kud_day <- kernelUD(FA01_day_spdf,grid = 500)
+FA01kud_night <- kernelUD(FA01_night_spdf,grid = 500)
+FA01_50_day <- getverticeshr(FA01kud_day,50)
+FA01_50_night <- getverticeshr(FA01kud_night,50)
+
+# convert UDs from lat long crs to UTM crs to match lion risk layer
+FA01_50_day.2 <- st_as_sf(FA01_50_day,crs = 32610)
+st_crs(FA01_50_day.2) <- 32610
+FA01_50_night.2 <- st_as_sf(FA01_50_night,crs = 32610)
+st_crs(FA01_50_night.2) <- 32610
+
+# set colors for plotting
+cols.fill = c("Day" = "#35A1AB", "Night" = "#0B0405")
+
+# plot FA01's uds over the lion risk layer
+FA01_UDplot <- ggplot()+
+  geom_spatraster(data = LionRisk_25)+
+  xlim(xmin2,xmax2)+
+  ylim(ymin2,ymax2)+
+  scale_fill_viridis_c(option = "mako",direction = -1)+
+  labs(fill = "Relative \npredation risk")+
+  geom_sf(data = FA01_50_day.2,color = "#35A1AB",fill = NA,lwd = 0.8)+
+  geom_sf(data = FA01_50_night.2, col = "#0B0405",fill = NA,lwd = 0.8)+
+  # scale_color_manual(name = "Time of day",values = cols.fill)+
+  theme_bw()+
+  theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))+
+  theme(legend.position = "none")+
+  ggplot2::annotate("text", x = 652400, y = 3984100, label = "A", size = 6)+
+  theme(legend.background = element_rect(fill = "#F3FBF5"))+
+  theme(plot.background = element_rect(fill = "#F3FBF5"))+
+  theme(panel.background = element_rect(fill = "#F3FBF5"))+
+  xlab("Latitude")+
+  ylab("Longitude")
+
+
+FA01_UDplot
+
+
+# convert FA08's uds from lat long crs to utm crs
+FA08_50_day.2 <- st_as_sf(FA08_50_day,crs = 32610)
+st_crs(FA08_50_day.2) <- 32610
+FA08_50_night.2 <- st_as_sf(FA08_50_night,crs = 32610)
+st_crs(FA08_50_night.2) <- 32610
+
+# plot FA08's UDs over the lion risk layer
+FA08_UDplot <- ggplot()+
+  geom_spatraster(data = LionRisk_25)+
+  xlim(xmin,xmax)+
+  ylim(ymin,ymax)+
+  scale_fill_viridis_c(option = "magma",direction = -1)+
+  labs(fill = "Relative \npredation risk")+
+  geom_sf(data = FA08_50_day.2,aes(color = "Day"),fill = NA,lwd = 0.8,show.legend = "line")+
+  geom_sf(data = FA08_50_night.2, aes(color = "Night"),fill = NA,lwd = 0.8,show.legend = "line")+
+  scale_color_manual(name = "Time of day",values = cols.fill)+
+  theme_bw()+
+  theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))+
+  ggplot2::annotate("text", x = 660600, y = 3983850, label = "B", size = 6)+
+  xlab("Latitude")+
+  ylab("")
+
+FA08_UDplot
+
+# plot both UD layers together
+bothUDs <- ggarrange(plotlist = list(FA01_UDplot,FA08_UDplot),ncol = 2,widths = c(1,1.45))
+
+# add save plot to a png for publication
+png(file = "../Figures/Pig_UDplots_25cell.png",height = 6, width = 10,
+    res = 300, units = "in",type = "cairo")
+bothUDs
+dev.off()
+
+
+Both_UDplot <- ggplot()+
+  geom_spatraster(data = LionRisk_25,maxcell = 1000000)+
+  scale_fill_viridis_c(option = "mako",direction = -1)+
+  labs(fill = "Relative probability of \ncougar kill occurrence\n")+
+  xlim(xmin2,xmax)+
+  ylim(ymin,ymax2)+
+  geom_sf(data = FA01_50_day.2,aes(color = "Day"),fill = NA,lwd = 1.3)+
+  geom_sf(data = FA01_50_night.2, aes(color = "Night"),fill = NA,lwd = 1.3)+
+  geom_sf(data = FA08_50_day.2,aes(color = "Day"),fill = NA,lwd = 1.3,show.legend = "line")+
+  geom_sf(data = FA08_50_night.2, aes(color = "Night"),fill = NA,lwd = 1.3,show.legend = "line")+
+  coord_sf(datum = st_crs(FA01_50_day.2))+
+  scale_color_manual(name = "Time of day",values = cols.fill)+
+  theme_bw()+
+  theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))+
+  theme(legend.background = element_rect(fill = "#F3FBF5"))+
+  theme(plot.background = element_rect(fill = "#F3FBF5"))+
+  theme(panel.background = element_rect(fill = "#F3FBF5"))+
+  # ggplot2::annotate("text", x = 652400, y = 3984100, label = "A", size = 6)+
+  xlab("Easting")+
+  ylab("Northing")
+
+png(filename = "../Figures/baserisk.png", width = 11, height = 5.5,
+    units = "in",res = 300)
+Both_UDplot
+dev.off()
+
+png(filename = "../Figures/dayrisk.png", width = 11, height = 5.5,
+    units = "in",res = 300)
+Both_UDplot
+dev.off()
+
+png(filename = "../Figures/daynightrisk.png", width = 11, height = 5.5,
+    units = "in",res = 300)
+Both_UDplot
+dev.off()
+
+# the next two plot plot the individual points over the lion risk layer
+# but I decided it was too messy and difficult to interpret
+FA08_plot <- ggplot()+
+  geom_spatraster(data = LionRisk)+
+  xlim(xmin,xmax)+
+  ylim(ymin,ymax)+
+  scale_fill_viridis_c(option = "magma",direction = -1)+
+  labs(fill = "Relative \npredation risk")+
+  geom_sf(data = temp,aes(col = factor(Period)),
+          alpha = 0.6,show.legend = FALSE,size = 1)+
+  scale_color_manual(values = c("cyan3","grey20"))+
+  theme_bw()+
+  facet_wrap(~Period)+
+  theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))
+
+
+
+FA01_plot <- ggplot()+
+  geom_spatraster(data = LionRisk)+
+  xlim(xmin2,xmax2)+
+  ylim(ymin2,ymax2)+
+  scale_fill_viridis_c(option = "magma",direction = -1)+
+  labs(fill = "Relative \npredation risk")+
+  geom_sf(data = temp2,aes(col = factor(Period)),
+          alpha = 0.4,show.legend = FALSE,size = 1)+
+  scale_color_manual(values = c("cyan3","grey20"))+
+  theme_bw()+
+  facet_wrap(~Period)+
+  theme(text = element_text(size = 18),axis.text.x = element_text(angle=45, hjust=1))
+
+
+
+png(file = "../Figures/FA01_UD_plot.png",height = 6, width = 10,
+     res = 300, units = "in",type = "cairo")
+FA01_UDplot
+dev.off()
+
+png(file = "../Figures/FA08_UD_plot.png",height = 6, width = 10,
+    res = 300, units = "in",type = "cairo")
+FA08_UDplot
+dev.off()
 
 #### Fit iSSA models for pig steps ####
 

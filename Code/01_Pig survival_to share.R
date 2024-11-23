@@ -434,3 +434,32 @@ ggplot(temp2, aes(x = Cause, y = TotalMorts, fill = age2))+
   theme(legend.title = element_text(size = 18))+
   theme(strip.background = element_blank())+
   theme(strip.text = element_blank())
+
+#### Examining monitoring dates ####
+survdata2$six_month <- survdata2$capturedate + 180
+
+months_mon <- survdata2 %>% 
+  select(pig_id,capturedate,lastdate,six_month)
+
+end_mon <- c()
+for(i in 1:nrow(months_mon)){
+  end_mon[i] <- min(months_mon$lastdate[i],months_mon$six_month[i])
+}
+months_mon$end_mon <- as.Date(end_mon,origin = mdy("01/01/1970"))
+months_mon <- months_mon %>% 
+  select(pig_id,capturedate,end_mon) %>% 
+  mutate(firstmonth = month(capturedate),
+         lastmonth = month(end_mon))
+
+months_mon$firstmonth[months_mon$firstmonth == 12] <- 0
+
+allmonths <- c()
+for(i in 1:nrow(months_mon)){
+  pigmonths <- seq(months_mon$firstmonth[i],months_mon$lastmonth[i],1)
+  allmonths <- c(allmonths,pigmonths)
+}
+allmonths[allmonths == 0] <- 12
+hist(allmonths)
+table(allmonths)
+
+hist(months_mon$firstmonth)

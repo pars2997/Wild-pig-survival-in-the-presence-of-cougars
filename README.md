@@ -1,6 +1,6 @@
 ## README
 
-Metadata for the manuscript 'Pig Survival and causes of mortality of introduced wild pigs in the presence of cougars' published in XXXX by MA Parsons, KC Vercauteren, JA Dellinger, and JK Young.
+Metadata for the manuscript 'Pig Survival and causes of mortality of introduced wild pigs in the presence of cougars' published in Biological Invasions by MA Parsons, KC Vercauteren, JA Dellinger, and JK Young.
 
 The data and R code provided here can be used to recreate results from this manuscript. The data files included several raster layers of topographic and landcover variables, capture and survival monitoring data for collared wild pigs, and a probability of cougar kill occurrence raster.
 
